@@ -1,5 +1,7 @@
 # 📊 ExtrAI Dashboard
 
+![CI](https://github.com/<org>/<repo>/actions/workflows/ci.yml/badge.svg)
+![Docker](https://github.com/<org>/<repo>/actions/workflows/deploy-docker.yml/badge.svg)
 Frontend web app for analytics, administration, and reporting of the ExtrAI platform. Built with Next.js (App Router) + TypeScript + Tailwind CSS + shadcn + Recharts.
 
 ## Features
@@ -15,7 +17,7 @@ Tech Stack
 	•	Tailwind CSS + shadcn
 	•	Recharts (charts), Zustand (state), Axios (HTTP)
 
-⸻
+---
 
 ## Getting Started
 
@@ -50,7 +52,7 @@ NEXT_PUBLIC_AUTH_AUDIENCE=""
 NEXT_PUBLIC_AUTH_ISSUER=""
 ```
 
-⸻
+---
 
 ## Scripts
 ```
@@ -67,7 +69,7 @@ NEXT_PUBLIC_AUTH_ISSUER=""
 ```
 Add Husky/commitlint later if desired; start simple.
 
-⸻
+---
 
 ## Project Structure
 ```
@@ -96,7 +98,7 @@ src/
     globals.css
 ```
 
-⸻
+---
 
 ## Example: API helper (src/lib/api.ts)
 ```
@@ -118,7 +120,7 @@ api.interceptors.response.use(
 );
 ```
 
-⸻
+---
 
 ## Run Locally
 ```
@@ -132,7 +134,7 @@ npm run start
 // http://localhost:3000
 ```
 
-⸻
+---
 
 ## Linting & Type Checking
 ```
@@ -140,7 +142,7 @@ npm run lint
 npm run typecheck
 ```
 
-⸻
+---
 
 ## First Milestones (MVP)
 	•	Layout shell (sidebar/header) + navigation
@@ -149,7 +151,7 @@ npm run typecheck
 	•	Analytics page with charts (volume/day, members growth, engagement)
 	•	Users page (list/detail) reading from BFF
 
-⸻
+---
 
 ## Conventions
 	•	Commits: Conventional Commits (e.g., feat(ui): add navigation menu)
@@ -157,14 +159,57 @@ npm run typecheck
 	•	API: all requests via src/lib/api.ts
 	•	State: colocated when possible, promote to store/ only when shared
 
-⸻
+---
+
+## 🧩 CI/CD (GitHub Actions + GHCR + Kubernetes)
+
+### CI
+- Executado em PRs e branch `main`.
+- Jobs: `lint` → `typecheck` → `build`.
+- Arquivo: `.github/workflows/ci.yml`.
+
+### CD (Docker + GHCR)
+- Ao fazer push na `main` ou abrir PR, o workflow:
+  1) constrói a imagem Docker do extrai-dashboard;
+  2) envia para o GitHub Container Registry (GHCR) com tags:
+     - `ghcr.io/<org>/<repo>:main` (branch principal)
+     - `ghcr.io/<org>/<repo>:sha-<commit>`
+     - `ghcr.io/<org>/<repo>:pr-<número>`
+- Arquivo: `.github/workflows/deploy-docker.yml`.
+- Secret necessário no repositório:
+  - `NEXT_PUBLIC_API_BASE_URL` (ex.: `https://bff.extrai.dev`)
+
+### Deploy em Kubernetes
+- Manifesto: `k8s/dashboard.yaml` (Deployment, Service, Ingress).
+- Pré-requisitos:
+  - Namespace: `extrai` (`kubectl create ns extrai`).
+  - Secret de envs:  
+    ```bash
+    kubectl -n extrai create secret generic extrai-dashboard-env \
+      --from-literal=NEXT_PUBLIC_API_BASE_URL="https://bff.extrai.dev"
+    ```
+  - Secret para pull de imagem privada (GHCR):  
+    ```bash
+    kubectl -n extrai create secret docker-registry ghcr-pull-secret \
+      --docker-server=ghcr.io \
+      --docker-username="<GITHUB_USERNAME>" \
+      --docker-password="<GITHUB_PAT_com_read:packages>" \
+      --docker-email="you@example.com"
+    ```
+- Aplicar manifesto:
+  ```bash
+  kubectl apply -f k8s/dashboard.yaml
+  kubectl -n extrai rollout status deploy/extrai-dashboard
+  ````
+
+---
 
 ## Security Notes
 	•	Never hardcode secrets; use environment variables
 	•	Validate and sanitize user input in forms
 	•	Use secure HTTP headers at the BFF level and behind a reverse proxy
 
-⸻
+---
 
 ## License
 
